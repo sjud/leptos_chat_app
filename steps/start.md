@@ -135,13 +135,31 @@ lib-features = ["hydrate"]
 lib-default-features = false
 ```
 
+One possible hang up when defining our Cargo.toml. We use `leptos_axum 5.4` which relies on `axum 0.6.0` we also call
+tower_http to send our favicon. The latest version of axum is `0.7.0` and the latest version of tower_http is `0.5.0`.
+If you specify the wrong version of axum or of tower_http, you're going to get very confusing error messages. There are breaking changes across versions, and when one library relies ontop of another one you're going to get type mismatch errors. But it won't be clear why they mismatch, and it will look like you are using the libraries together in the wrong way. Usually the error messages will tell you something like
+```rust
+    = note: `Response<UnsyncBoxBody<Bytes, Error>>` and `Response<UnsyncBoxBody<Bytes, Error>>` have similar names, but are actually distinct types
+```
+But sometimes they will not, particularly if you are dealing with traits.
+```rust
+error[E0277]: the trait bound `ServeFileSystemResponseBody: HttpBody` is not satisfied
+   --> src/main.rs:100:27
+    |
+100 |                 .map(|res|res.map(axum::body::boxed))
+    |                           ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `HttpBody` is not implemented for `ServeFileSystemResponseBody`
+```
+So if you are bringing in traits across multiple crates, and using an old version of atleast one crate and you find that things are not working as shown in a repo's examples make sure all of your libraries versions are expecting each other.<br>
+In this case, we need `tower_http 0.3.4`.<br>
+
 Let's build the folder structure of our project.<br>
 A `migrations` folder for our sqlite migrations.<br>
 A `tests` folder for our tests<br>
 A `features` folder for our cucumber features, we'll cover this later when we write our first end to end test.<br>
 A `public` folder for our static files.<br>
+A `.github/workflows` folders for our github files and one to store our workflows.
 ```sh
-mkdir migrations && mkdir tests && mkdir features && mkdir public
+mkdir migrations && mkdir tests && mkdir features && mkdir public && mkdir .github && mkdir .github/workflows
 ```
 And inside of our srcs folder we're going to organize our app in the following way.<br>
 We're splitting the main file into the code for the server and the code for the client. <br>
@@ -495,4 +513,37 @@ EXPOSE 3000
 ENTRYPOINT ["./target/release/leptos_chat_app"]
 ```
 It's pretty simple, we use the Rust base image. We set rustup to override nightly (because we want to use leptos nightly features),
-we need to add the wasm32-unkown-unknown compilation target so cargo leptos build can build the client, and we use apt (linux package mangement tool) to install binaryen which is toolchain for WASM.
+we need to add the wasm32-unkown-unknown compilation target so cargo leptos build can build the client, and we use apt (linux package mangement tool) to install binaryen which is toolchain for WASM. We need to EXPOSE the port that we set in our Cargo.toml under site-addr. And, while we're at it let's add a profile realease optimization to our Cargo.toml
+
+```toml
+[profile.release]
+codegen-units = 1
+lto = true
+```
+Codegen units are parallel optimizations the rust compiler performs, telling it to use only 1 or in otherwords not to parralelize
+compilation can increase it's ability to optimize the code itself. LTO, link time optimization will try to optimize across crate boundries such as our dependencies. But, it makes compiling even slower.
+
+While we're thinking about release optimzations lets create a index.html file.
+
+```html
+<!DOCTYPE html>
+<html>
+	<head>
+		<link data-trunk rel="rust" data-wasm-opt="z"/>
+		<link data-trunk rel="icon" type="image/ico" href="/favicon.ico"/>
+	</head>
+	<body></body>
+</html>
+```
+This line
+```html
+		<link data-trunk rel="rust" data-wasm-opt="z"/>
+```
+Tells trunk to use wasm optimization 'z' which is the one that will reduce final binary size. The wasm binary is the thing we send
+to the client, so getting it as small as possible is one of our goals. We're prioritizing a fast server and a small client. 
+
+When we get Digital Ocean set up, we'll track the main branch and when we push our code to the main branch, Digital Ocean will see that and redeploy. Let's set up a CICD workflow to make sure the code we merge onto our github main branch passes our tests.<br>
+
+Let's create a standard Clippy, cargo fmt, cargo test workflow. That has three jobs, the first runs cargo fmt on our code, the second
+checks to see if we getting any clippy warnings and the third that runs our tests. The first job will run first and change our code, cargo clippy and our test suite will run in parallel. If either don't pass, i.e cargo clippy returns any warnings or cargo test has any test failures then our cargo won't merge and Digital Ocean won't redeploy.
+

@@ -3,6 +3,10 @@ name = "leptos_chat_app"
 version = "0.1.0"
 edition = "2021"
 
+[profile.release]
+codegen-units = 1
+lto = true
+
 [lib]
 crate-type = ["cdylib", "rlib"]
 
@@ -19,7 +23,7 @@ leptos_meta = "0.5.4"
 leptos_router = "0.5.4"
 sqlx = { version = "0.7.3", optional = true, features=["sqlite","runtime-tokio"]}
 tokio = { version = "1.35.1", optional=true }
-tower = {version = "0.4.10", optional = true, featyres=["util"]}
+tower = {version = "0.4.10", optional = true}
 tower-http = { version = "0.3.4", optional = true, features=["fs"]}
 wasm-bindgen = "0.2.89"
 
