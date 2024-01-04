@@ -1,13 +1,13 @@
-cfg_if::cfg_if!{
+cfg_if::cfg_if! {
     if #[cfg(feature="ssr")]
     {
         use axum::{
-            Router, 
+            Router,
             routing::get,
-            extract::{Path, RawQuery, State}, 
+            extract::{Path, RawQuery, State},
             http::HeaderMap,
-            http::Request, 
-            body::Body, 
+            http::Request,
+            body::Body,
             response::IntoResponse
         };
         use std::collections::HashMap;
@@ -20,40 +20,40 @@ cfg_if::cfg_if!{
             conn:SqlitePool,
             options:LeptosOptions,
         }
-  
+
         #[tokio::main]
         async fn main() {
             let pool = sqlx::SqlitePool::connect("sqlite::memory:").await.expect("db pool to work");
-        
+
             sqlx::migrate!()
                         .run(&pool)
                         .await
                         .expect("could not run SQLx migrations");
-        
+
             let conf = get_configuration(Some("Cargo.toml")).await.unwrap();
-        
+
             let leptos_options = conf.leptos_options;
             let addr = leptos_options.site_addr;
             let routes =  leptos_axum::generate_route_list(leptos_chat_app::App);
-            
+
             let state = ServerState{
                 options:leptos_options,
                 conn:pool,
             };
-            
+
             let app = Router::new()
                 .route("/favicon.ico", get(favicon))
                 .route("/api/*fn_name",get(server_fn_handler).post(server_fn_handler))
                 .leptos_routes_with_handler(routes, get(leptos_routes_handler))
                 .fallback(||async{})
                 .with_state(state);
-        
+
             axum::Server::bind(&addr)
                 .serve(app.into_make_service())
                 .await
                 .unwrap()
         }
-        
+
         pub async fn server_fn_handler(
             State(state): State<ServerState>,
             path: Path<String>,
@@ -80,7 +80,7 @@ cfg_if::cfg_if!{
             axum::extract::State(option): axum::extract::State<LeptosOptions>,
             request: Request<Body>,
         ) -> axum::response::Response {
-            
+
             let handler = leptos_axum::render_app_async_with_context(
                 option.clone(),
                 move || {
@@ -88,7 +88,7 @@ cfg_if::cfg_if!{
                 },
                 move || view! {  <leptos_chat_app::App/> },
             );
-    
+
             handler(request).await.into_response()
         }
 
@@ -112,7 +112,3 @@ cfg_if::cfg_if!{
         }
     }
 }
-
-
-
-

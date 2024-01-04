@@ -5,9 +5,6 @@ pub fn App() -> impl IntoView {
     view! {}
 }
 
-
-
-
 cfg_if::cfg_if! {
     if #[cfg(feature = "hydrate")] {
         use wasm_bindgen::prelude::wasm_bindgen;
@@ -20,5 +17,3 @@ cfg_if::cfg_if! {
         }
     }
 }
-
-
