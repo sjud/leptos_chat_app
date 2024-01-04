@@ -3,6 +3,58 @@ name = "leptos_chat_app"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+axum = {version = "0.6.0", optional=true}
+axum-macros = { version= "0.3.0", optional=true}
+cfg-if = "1.0.0"
+console_error_panic_hook = "0.1.7"
+console_log = "1.0.0"
+leptos = "0.5.4"
+leptos-use = "0.9.0"
+leptos_axum = {version = "0.5.4",optional=true}
+leptos_meta = "0.5.4"
+leptos_router = "0.5.4"
+sqlx = { version = "0.7.3", optional = true, features=["sqlite","runtime-tokio"]}
+tokio = { version = "1.35.1", optional=true }
+tower = {version = "0.4.10", optional = true, featyres=["util"]}
+tower-http = { version = "0.3.4", optional = true, features=["fs"]}
+wasm-bindgen = "0.2.89"
+
+[dev-dependencies]
+cucumber = "0.19.1"
+fantoccini = "0.19.3"
+
+[features]
+default = ["ssr"] 
+hydrate = ["leptos/hydrate", "leptos_meta/hydrate", "leptos_router/hydrate"]
+ssr = [
+    "dep:axum",
+    "dep:axum-macros",
+    "leptos/ssr",
+    "leptos-use/ssr",
+    "dep:leptos_axum",
+    "leptos_meta/ssr",
+    "leptos_router/ssr",
+    "dep:tower-http",
+    "dep:tower",
+    "dep:sqlx",
+    "dep:tokio",
+]
+
+
+
+[package.metadata.leptos]
+output-name = "leptos_chat_app"
+site-root = "target/site"
+site-addr = "0.0.0.0:3000"
+reload-port = 3001
+browserquery = "defaults"
+watch = false
+env = "DEV"
+bin-features = ["ssr"]
+bin-default-features = false
+lib-features = ["hydrate"]
+lib-default-features = false
