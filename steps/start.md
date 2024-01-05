@@ -550,7 +550,7 @@ checks to see if we getting any clippy warnings and the third that runs our test
 ```yaml
 name: Rust Code Checks
 run-name: ${{ github.actor }} Push Code
-on: [push]
+on: [push,pull_request]
 
 jobs:
   format:
@@ -596,6 +596,6 @@ Go to your GitHub repository.<br>
 Click on "Settings" at the top.<br>
 In the left sidebar, click "Branches."<br>
 Under "Branch protection rules," you can view existing rules or add new ones.<br>
-We'll set branch name pattern to '*' which is wildcard and applies it to all branches.<br>
-We'll require status check before merging and add `Format Rust Code`, `Lint With Clippy`, and `Run Tests`. <br>
-And set it so that we do not allow settings to be bypassed, so that when I push to the repo as the admin it will still gatekeep my code. <br>
+We'll set branch name pattern to 'main', our Digital Ocean deployment redeploys off of main so we won't deploy anything that doesn't pass our tests.<br>
+We'll require status check before pushing and for pull requests and add `Format Rust Code`, `Lint With Clippy`, and `Run Tests`. <br>
+And set it so that we do not allow settings to be bypassed, so this will check our code as admin. <br>

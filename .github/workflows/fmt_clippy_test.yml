@@ -1,6 +1,6 @@
 name: Rust Code Checks
 run-name: ${{ github.actor }} Push Code
-on: [push]
+on: [pull_request,push]
 
 jobs:
   format:
