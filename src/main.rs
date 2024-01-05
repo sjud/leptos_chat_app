@@ -23,7 +23,6 @@ cfg_if::cfg_if! {
 
         #[tokio::main]
         async fn main() {
-            let     a =             00;
             let pool = sqlx::SqlitePool::connect("sqlite::memory:").await.expect("db pool to work");
 
             sqlx::migrate!()
