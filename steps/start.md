@@ -544,6 +544,58 @@ to the client, so getting it as small as possible is one of our goals. We're pri
 
 When we get Digital Ocean set up, we'll track the main branch and when we push our code to the main branch, Digital Ocean will see that and redeploy. Let's set up a CICD workflow to make sure the code we merge onto our github main branch passes our tests.<br>
 
-Let's create a standard Clippy, cargo fmt, cargo test workflow. That has three jobs, the first runs cargo fmt on our code, the second
-checks to see if we getting any clippy warnings and the third that runs our tests. The first job will run first and change our code, cargo clippy and our test suite will run in parallel. If either don't pass, i.e cargo clippy returns any warnings or cargo test has any test failures then our cargo won't merge and Digital Ocean won't redeploy.
+Let's create a standard Clippy, cargo fmt, cargo test workflow. That has three jobs, the first runs checks cargo fmt on our code, the second
+checks to see if we getting any clippy warnings and the third that runs our tests. Each job will run in parallel.
 
+```yaml
+name: Rust Code Checks
+run-name: ${{ github.actor }} Push Code
+on: [push]
+
+jobs:
+  format:
+    name: Format Rust code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+      - run: rustup component add rustfmt
+      - run: cargo fmt -- --check
+
+  clippy:
+    name: Lint with Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          components: clippy
+          override: true
+      - run: cargo clippy -- -D warnings
+
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+      - run: cargo test
+```
+
+Now this doesn't automatically prevent failures from being pushed to do that we need to create a branch protection rule in github.<br>
+Go to your GitHub repository.<br>
+Click on "Settings" at the top.<br>
+In the left sidebar, click "Branches."<br>
+Under "Branch protection rules," you can view existing rules or add new ones.<br>
+We'll set branch name pattern to '*' which is wildcard and applies it to all branches.<br>
+We'll require status check before merging and add `Format Rust Code`, `Lint With Clippy`, and `Run Tests`. <br>
+And set it so that we do not allow settings to be bypassed, so that when I push to the repo as the admin it will still gatekeep my code. <br>
