@@ -1,10 +1,10 @@
 use leptos::*;
 
-#[cfg(feature="ssr")]
+#[cfg(feature = "ssr")]
 pub mod fallback;
 
-#[server(endpoint="hello_world")]
-pub async fn hello_world_server() -> Result<String,ServerFnError> {
+#[server(endpoint = "hello_world")]
+pub async fn hello_world_server() -> Result<String, ServerFnError> {
     leptos::logging::log!("Hey?");
     Ok("Hey.".to_string())
 }
@@ -13,7 +13,7 @@ pub async fn hello_world_server() -> Result<String,ServerFnError> {
 pub fn App() -> impl IntoView {
     let action = create_server_action::<HelloWorldServer>();
     let vals = create_rw_signal(String::new());
-    let result =  action.value();
+    let result = action.value();
     let num = create_rw_signal(0);
     create_effect(move |_| {
         if let Some(resp) = result.get() {
@@ -23,8 +23,8 @@ pub fn App() -> impl IntoView {
             }
         } else {
             let n = num.get_untracked();
-            num.set(n+1);
-            vals.set(format!("WUT{}",n));
+            num.set(n + 1);
+            vals.set(format!("WUT{}", n));
         }
     });
     view! {<button

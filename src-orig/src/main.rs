@@ -76,7 +76,7 @@ cfg_if::cfg_if! {
                 .allow_origin("tauri://localhost".parse::<axum::http::HeaderValue>().unwrap())
                 .allow_headers(vec![axum::http::header::CONTENT_TYPE]);
 
-            
+
             let app = Router::new()
                 .route("/api/*fn_name",get(server_fn_handler).post(server_fn_handler))
                 .layer(cors)
