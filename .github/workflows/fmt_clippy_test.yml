@@ -42,7 +42,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install libgtk-3-dev libsoup3.0 libjavascriptcoregtk-4.1
-          SOUP_PATH=$(sudo find / -name "libsoup-3.0.pc" | xargs dirname)
-          echo "Found libsoup-3.0.pc at: $SOUP_PATH"
-          echo "PKG_CONFIG_PATH=$SOUP_PATH" >> $GITHUB_ENV
+          SOUP_PATH=$(sudo find / -name "libsoup-3.0.pc" | head -n 1)
+          if [ -z "$SOUP_PATH" ]; then
+            echo "libsoup-3.0.pc not found"
+            exit 1
+          fi
+          SOUP_DIR=$(dirname $SOUP_PATH)
+          echo "Found libsoup-3.0.pc at: $SOUP_DIR"
+          echo "PKG_CONFIG_PATH=$SOUP_DIR" >> $GITHUB_ENV
       - run: cargo test
