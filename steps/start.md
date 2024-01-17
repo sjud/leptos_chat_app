@@ -513,7 +513,7 @@ EXPOSE 3000
 ENTRYPOINT ["./target/release/leptos_chat_app"]
 ```
 It's pretty simple, we use the Rust base image. We set rustup to override nightly (because we want to use leptos nightly features),
-we need to add the wasm32-unkown-unknown compilation target so cargo leptos build can build the client, and we use apt (linux package mangement tool) to install binaryen which is toolchain for WASM. We need to EXPOSE the port that we set in our Cargo.toml under site-addr. And, while we're at it let's add a profile realease optimization to our Cargo.toml
+we need to add the wasm32-unkown-unknown compilation target so cargo leptos build can build the client, and we use apt (linux package mangement tool) to install binaryen which is toolchain for WASM. We need to EXPOSE the port that we set in our Cargo.toml under site-addr. And, while we're at it let's add a profile release optimization to our Cargo.toml
 
 ```toml
 [profile.release]
@@ -521,7 +521,7 @@ codegen-units = 1
 lto = true
 ```
 Codegen units are parallel optimizations the rust compiler performs, telling it to use only 1 or in otherwords not to parralelize
-compilation can increase it's ability to optimize the code itself. LTO, link time optimization will try to optimize across crate boundries such as our dependencies. But, it makes compiling even slower.
+compilation can increase it's ability to optimize the code itself. LTO, link time optimization will try to optimize across crate boundries such as our dependencies. But, it makes compiling even slower. It's strongly recommended to set lto = true, and it's default for cargo leptos new projects. It reduces wasm binary size significantly.
 
 While we're thinking about release optimzations lets create a index.html file.
 
@@ -597,5 +597,98 @@ Click on "Settings" at the top.<br>
 In the left sidebar, click "Branches."<br>
 Under "Branch protection rules," you can view existing rules or add new ones.<br>
 We'll set branch name pattern to 'main', our Digital Ocean deployment redeploys off of main so we won't deploy anything that doesn't pass our tests.<br>
-We'll require status check before pushing and for pull requests and add `Format Rust Code`, `Lint With Clippy`, and `Run Tests`. <br>
+We'll require status check before pull requests and add `Format Rust Code`, `Lint With Clippy`, and `Run Tests`. <br>
 And set it so that we do not allow settings to be bypassed, so this will check our code as admin. <br>
+
+Now lets use Tauri so we can build for Android and iOS as well as the browser. I'm on mac so I'll be building a mac app as well. I already have xcode installed.<br>
+Let's follow the tauri v2 beta guide. I'll be covering the mobile targets section<br>
+https://beta.tauri.app/guides/prerequisites/<br>
+Install the tauri-cli.
+```sh
+cargo install tauri-cli
+```
+I'm on mac so I'll be using.
+```sh
+export ANDROID_HOME="$HOME/Library/Android/sdk"
+export NDK_HOME="$ANDROID_HOME/ndk/25.0.8775105"
+```
+and
+```
+rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
+```
+and
+```
+rustup target add aarch64-apple-ios x86_64-apple-ios aarch64-apple-ios-sim
+```
+I already have homebrew and cocoapods installed.
+Let's add this to our index.html
+```html
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+```
+->
+```html
+<!DOCTYPE html>
+<html>
+	<head>
+		<link data-trunk rel="rust" data-wasm-opt="z"/>
+		<link data-trunk rel="icon" type="image/ico" href="/favicon.ico"/>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	</head>
+	<body></body>
+</html>
+```
+To build for Tauri we'll need to use client side rendering when we build the mobile and desktop apps. <br>
+Let's add this to the features section in our Cargo.toml.
+```toml
+csr = ["leptos/csr"]
+```
+So our features section looks like 
+```toml
+[features]
+csr = ["leptos/csr"]
+default = ["ssr"] 
+hydrate = ["leptos/hydrate", "leptos_meta/hydrate", "leptos_router/hydrate"]
+ssr = [
+    "dep:axum",
+    "dep:axum-macros",
+    "leptos/ssr",
+    "leptos-use/ssr",
+    "dep:leptos_axum",
+    "leptos_meta/ssr",
+    "leptos_router/ssr",
+    "dep:tower-http",
+    "dep:tower",
+    "dep:sqlx",
+    "dep:tokio",
+]
+```
+And when we build our app I'll use this command, which I got from using cargo leptos build and copying the command for hydrate and switching hydrate for csr. You'll want to replace the `--target-dir` arg with your own path to your project.
+```sh
+cargo build --package=leptos_chat_app --lib --target-dir=/Users/sam/Projects/leptos_chat_app/target/front --target=wasm32-unknown-unknown --no-default-features --features=csr
+```
+
+We'll update our crate type
+```toml
+[lib]
+crate-type = ["staticlib", "cdylib", "rlib"]
+```
+
+We'll run
+```sh
+cargo tauri build -v -- --no-default-features --features=csr,tauri
+```
+index.html needs to be in `target/site/pkg` <br>
+So for building 
+```
+cargo leptos build
+```
+and then after
+```
+cp ./index.html ./target/site/pkg
+```
+
+```sh
+cargo leptos serve --bin-features=ssr --lib-features=hydrate
+```
