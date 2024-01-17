@@ -39,5 +39,5 @@ jobs:
           profile: minimal
           override: true
       - name: Install GDK and libsoup dependencies
-        run: sudo apt-get install libgtk-3-dev libsoup3.0 libjavascriptcoregtk-4.1
+        run: sudo apt-get install libgtk-3-dev libsoup3.0 libjavascriptcoregtk-4.0-dev
       - run: cargo test
