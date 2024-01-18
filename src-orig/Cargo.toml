@@ -5,7 +5,6 @@ edition = "2021"
 
 
 [lib]
-#name = "leptos_chat_app_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [[bin]]
