@@ -58,7 +58,7 @@ ssr = [
 
 [package.metadata.leptos]
 output-name="leptos_chat_app"
-bin-exe="leptos_chat_app_bin"
+bin-exe-name="leptos_chat_app_bin"
 assets-dir = "../public"
 site-pkg-dir = "pkg"
 site-root = "target/site"
