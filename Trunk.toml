@@ -1,0 +1,7 @@
+[build]
+target = "./src-orig/index.html"
+
+[watch]
+ignore = ["./src-tauri"]
+
+
